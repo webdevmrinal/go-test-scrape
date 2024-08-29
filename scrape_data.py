@@ -5,6 +5,7 @@ import os
 from appwrite.client import Client
 from appwrite.services.databases import Databases
 from datetime import datetime
+from appwrite.query import Query
 
 headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -75,6 +76,8 @@ def scrape_test_series(url):
     
     return data
 
+from appwrite.query import Query
+
 def update_appwrite(quizzes_data, test_series_data):
     client = Client()
     client.set_endpoint(os.getenv('APPWRITE_ENDPOINT'))
@@ -85,6 +88,30 @@ def update_appwrite(quizzes_data, test_series_data):
     database_id = os.getenv('APPWRITE_DATABASE_ID')
     quizzes_collection_id = os.getenv('APPWRITE_QUIZZES_COLLECTION_ID')
     test_series_collection_id = os.getenv('APPWRITE_TEST_SERIES_COLLECTION_ID')
+
+    def update_or_create_document(collection_id, data, identifier_field):
+        try:
+            # Check if document already exists
+            existing_docs = databases.list_documents(
+                database_id,
+                collection_id,
+                [Query.equal(identifier_field, data[identifier_field])]
+            )
+
+            if existing_docs['total'] > 0:
+                # Document exists, update it
+                doc_id = existing_docs['documents'][0]['$id']
+                result = databases.update_document(database_id, collection_id, doc_id, data)
+                print(f"Updated document with ID: {result['$id']}")
+            else:
+                # Document doesn't exist, create it
+                result = databases.create_document(database_id, collection_id, 'unique()', data)
+                print(f"Created new document with ID: {result['$id']}")
+            
+            return result
+        except Exception as e:
+            print(f"Error processing document: {e}")
+            print(f"Data: {data}")
 
     # Update Quizzes
     for quiz in quizzes_data:
@@ -97,12 +124,7 @@ def update_appwrite(quizzes_data, test_series_data):
             'availability': quiz['Availability'],
             'lastUpdated': datetime.now().isoformat()
         }
-        try:
-            result = databases.create_document(database_id, quizzes_collection_id, 'unique()', formatted_quiz)
-            print(f"Successfully created quiz document with ID: {result['$id']}")
-        except Exception as e:
-            print(f"Error creating quiz document: {e}")
-            print(f"Quiz data: {formatted_quiz}")
+        update_or_create_document(quizzes_collection_id, formatted_quiz, 'examName')
 
     # Update Test Series
     for test in test_series_data:
@@ -113,12 +135,7 @@ def update_appwrite(quizzes_data, test_series_data):
             'topics': test['Topics'],
             'lastUpdated': datetime.now().isoformat()
         }
-        try:
-            result = databases.create_document(database_id, test_series_collection_id, 'unique()', formatted_test)
-            print(f"Successfully created test series document with ID: {result['$id']}")
-        except Exception as e:
-            print(f"Error creating test series document: {e}")
-            print(f"Test series data: {formatted_test}")
+        update_or_create_document(test_series_collection_id, formatted_test, 'examName')
 
 if __name__ == "__main__":
     quizzes_url = "https://www.goclasses.in/s/pages/gate-cse-weekly-quizzes"
