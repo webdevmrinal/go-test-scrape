@@ -90,7 +90,8 @@ def update_appwrite(quizzes_data, test_series_data):
     for quiz in quizzes_data:
         quiz['lastUpdated'] = datetime.now().isoformat()
         try:
-            databases.create_document(database_id, quizzes_collection_id, 'unique()', quiz)
+            result = databases.create_document(database_id, quizzes_collection_id, 'unique()', quiz)
+            print(f"Successfully created quiz document with ID: {result['$id']}")
         except Exception as e:
             print(f"Error creating quiz document: {e}")
             print(f"Quiz data: {quiz}")
@@ -99,7 +100,8 @@ def update_appwrite(quizzes_data, test_series_data):
     for test in test_series_data:
         test['lastUpdated'] = datetime.now().isoformat()
         try:
-            databases.create_document(database_id, test_series_collection_id, 'unique()', test)
+            result = databases.create_document(database_id, test_series_collection_id, 'unique()', test)
+            print(f"Successfully created test series document with ID: {result['$id']}")
         except Exception as e:
             print(f"Error creating test series document: {e}")
             print(f"Test series data: {test}")
