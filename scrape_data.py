@@ -89,12 +89,20 @@ def update_appwrite(quizzes_data, test_series_data):
     # Update Quizzes
     for quiz in quizzes_data:
         quiz['lastUpdated'] = datetime.now().isoformat()
-        databases.create_document(database_id, quizzes_collection_id, 'unique()', quiz)
+        try:
+            databases.create_document(database_id, quizzes_collection_id, 'unique()', quiz)
+        except Exception as e:
+            print(f"Error creating quiz document: {e}")
+            print(f"Quiz data: {quiz}")
 
     # Update Test Series
     for test in test_series_data:
         test['lastUpdated'] = datetime.now().isoformat()
-        databases.create_document(database_id, test_series_collection_id, 'unique()', test)
+        try:
+            databases.create_document(database_id, test_series_collection_id, 'unique()', test)
+        except Exception as e:
+            print(f"Error creating test series document: {e}")
+            print(f"Test series data: {test}")
 
 if __name__ == "__main__":
     quizzes_url = "https://www.goclasses.in/s/pages/gate-cse-weekly-quizzes"
