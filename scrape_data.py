@@ -88,23 +88,37 @@ def update_appwrite(quizzes_data, test_series_data):
 
     # Update Quizzes
     for quiz in quizzes_data:
-        quiz['lastUpdated'] = datetime.now().isoformat()
+        formatted_quiz = {
+            'examName': quiz['Exam Name'],
+            'testLink': quiz['Test Link'],
+            'examDate': quiz['Exam Date'],
+            'course': quiz['Course'],
+            'topics': quiz['Topics'],
+            'availability': quiz['Availability'],
+            'lastUpdated': datetime.now().isoformat()
+        }
         try:
-            result = databases.create_document(database_id, quizzes_collection_id, 'unique()', quiz)
+            result = databases.create_document(database_id, quizzes_collection_id, 'unique()', formatted_quiz)
             print(f"Successfully created quiz document with ID: {result['$id']}")
         except Exception as e:
             print(f"Error creating quiz document: {e}")
-            print(f"Quiz data: {quiz}")
+            print(f"Quiz data: {formatted_quiz}")
 
     # Update Test Series
     for test in test_series_data:
-        test['lastUpdated'] = datetime.now().isoformat()
+        formatted_test = {
+            'examName': test['Exam Name'],
+            'testLink': test['Test Link'],
+            'examDate': test['Exam Date'],
+            'topics': test['Topics'],
+            'lastUpdated': datetime.now().isoformat()
+        }
         try:
-            result = databases.create_document(database_id, test_series_collection_id, 'unique()', test)
+            result = databases.create_document(database_id, test_series_collection_id, 'unique()', formatted_test)
             print(f"Successfully created test series document with ID: {result['$id']}")
         except Exception as e:
             print(f"Error creating test series document: {e}")
-            print(f"Test series data: {test}")
+            print(f"Test series data: {formatted_test}")
 
 if __name__ == "__main__":
     quizzes_url = "https://www.goclasses.in/s/pages/gate-cse-weekly-quizzes"
