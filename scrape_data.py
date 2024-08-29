@@ -1,6 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
 import json
+import os
+from appwrite.client import Client
+from appwrite.services.databases import Databases
+from datetime import datetime
 
 headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -71,12 +75,32 @@ def scrape_test_series(url):
     
     return data
 
-quizzes_url = "https://www.goclasses.in/s/pages/gate-cse-weekly-quizzes"
-test_series_url = "https://www.goclasses.in/s/pages/gate-cse-test-series"
+def update_appwrite(quizzes_data, test_series_data):
+    client = Client()
+    client.set_endpoint(os.getenv('APPWRITE_ENDPOINT'))
+    client.set_project(os.getenv('APPWRITE_PROJECT_ID'))
+    client.set_key(os.getenv('APPWRITE_API_KEY'))
 
-quizzes_data = scrape_quizzes(quizzes_url)
-test_series_data = scrape_test_series(test_series_url)
+    databases = Databases(client)
+    database_id = os.getenv('APPWRITE_DATABASE_ID')
+    quizzes_collection_id = os.getenv('APPWRITE_QUIZZES_COLLECTION_ID')
+    test_series_collection_id = os.getenv('APPWRITE_TEST_SERIES_COLLECTION_ID')
 
-# Convert data to JSON and print
-print(json.dumps(quizzes_data, indent=2))
-print(json.dumps(test_series_data, indent=2))
+    # Update Quizzes
+    for quiz in quizzes_data:
+        quiz['lastUpdated'] = datetime.now().isoformat()
+        databases.create_document(database_id, quizzes_collection_id, 'unique()', quiz)
+
+    # Update Test Series
+    for test in test_series_data:
+        test['lastUpdated'] = datetime.now().isoformat()
+        databases.create_document(database_id, test_series_collection_id, 'unique()', test)
+
+if __name__ == "__main__":
+    quizzes_url = "https://www.goclasses.in/s/pages/gate-cse-weekly-quizzes"
+    test_series_url = "https://www.goclasses.in/s/pages/gate-cse-test-series"
+
+    quizzes_data = scrape_quizzes(quizzes_url)
+    test_series_data = scrape_test_series(test_series_url)
+
+    update_appwrite(quizzes_data, test_series_data)
